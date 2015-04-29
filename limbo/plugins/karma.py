@@ -32,14 +32,14 @@ def on_message(msg, server):
         karma_dict.close()
         return '\n'.join(status)
 
-    matches = re.findall(r"([^ +\-@]+)(\+{2,}|-{2,})", text)
+    updates = []
+
+    matches = re.findall(r"@([^ +\-@]+)\>(\+{2,}|-{2,})", text)
     if not matches:
         return
 
-    updates = []
-
-    for match in matches:
-        user, operation = match
+    for user_id, operation in matches:
+        user = server.slack.server.users.get(user_id)["name"]
         karma = update_karma(user, operation)
         updates.append('%s now has %s karma' % (user, karma))
 
