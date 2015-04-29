@@ -1,18 +1,23 @@
 """!calc <equation> will return the google calculator result for <equation>"""
 import re
+import shelve
 
-karma_dict = {}
 
 def update_karma(user, operation):
-    karma = karma_dict.setdefault(user, 0)
+    karma_dict = shelve.open('./karma.shelf')
+    key = user.encode('ascii')
+    karma = karma_dict.setdefault(key, 0)
     bumps = len(operation) - 1
 
     if operation.startswith('+'):
-        karma_dict[user] += bumps
+        karma += bumps
     else:
-        karma_dict[user] -= bumps
+        karma -= bumps
 
-    return karma_dict[user]
+    karma_dict[key] = karma
+    karma_dict.close()
+
+    return karma
 
 def on_message(msg, server):
     text = msg.get("text", "")
@@ -20,9 +25,11 @@ def on_message(msg, server):
     if text.startswith('!karma'):
         status = []
 
+        karma_dict = shelve.open('./karma.shelf')
         for user, karma in karma_dict.items():
             status.append('%s => %s' % (user, karma))
 
+        karma_dict.close()
         return '\n'.join(status)
 
     matches = re.findall(r"([^ +\-@]+)(\+{2,}|-{2,})", text)

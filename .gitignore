@@ -11,3 +11,5 @@ build/
 dist/
 slask.egg-info/
 .DS_Store
+
+*.shelf
