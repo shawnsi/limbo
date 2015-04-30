@@ -1,4 +1,4 @@
-"""!calc <equation> will return the google calculator result for <equation>"""
+"""@<user>(++|--) will respectivley increase or decrease karma for <user>"""
 import re
 import shelve
 
@@ -28,6 +28,7 @@ def update_karma(user, sender, operation):
 
 def on_message(msg, server):
     text = msg.get("text", "")
+    sender = server.slack.server.users.get(msg.get("user"))["name"]
 
     status = []
 
@@ -46,8 +47,7 @@ def on_message(msg, server):
 
     for user_id, operation in matches:
         user = server.slack.server.users.get(user_id)["name"]
-        sender = server.slack.server.users.get(msg.get("user"))["name"]
-        user, karma = update_karma(user, sender, operation)
-        status.append('%s now has %s karma' % (user, karma))
+        result = update_karma(user, sender, operation)
+        status.append('%s now has %s karma' % result)
 
     return '\n'.join(status)
