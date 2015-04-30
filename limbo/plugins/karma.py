@@ -3,21 +3,28 @@ import re
 import shelve
 
 
-def update_karma(user, sender, operation):
+def bump_karma(user, bumps):
     karma_dict = shelve.open('./karma.shelf')
     key = user.encode('ascii')
     karma = karma_dict.setdefault(key, 0)
-    bumps = len(operation) - 1
-
-    if operation.startswith('+') and user != sender:
-        karma += bumps
-    else:
-        karma -= bumps
-
+    karma += bumps
     karma_dict[key] = karma
     karma_dict.close()
+    return user, karma
 
-    return karma
+def update_karma(user, sender, operation):
+    bumps = len(operation) - 1
+
+    # Protect limbo from evil doers
+    if user == 'limbo' and operation.startswith('-'):
+        return bump_karma(sender, -1 * bumps)
+
+    # Can't bump yourself!
+    if operation.startswith('+') and user != sender:
+        return bump_karma(user, bumps)
+
+    # Everything else is fair game
+    return bump_karma(user, -1 * bumps)
 
 def on_message(msg, server):
     text = msg.get("text", "")
@@ -40,7 +47,7 @@ def on_message(msg, server):
     for user_id, operation in matches:
         user = server.slack.server.users.get(user_id)["name"]
         sender = server.slack.server.users.get(msg.get("user"))["name"]
-        karma = update_karma(user, sender, operation)
+        user, karma = update_karma(user, sender, operation)
         status.append('%s now has %s karma' % (user, karma))
 
     return '\n'.join(status)
